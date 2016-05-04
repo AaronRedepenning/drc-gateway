@@ -121,6 +121,7 @@ app.get('/raw-data', function(req, res) {
         gaugeData: gauges,
         chartData: chartData
     };
+    res.send(overviewData);
 })
 
 
