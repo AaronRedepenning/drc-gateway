@@ -20,5 +20,63 @@ serialPort.on('open', function () {
 
 // All frames parsed by the XBee will be emitted here
 xbeeApi.on("frame_object", function(frame) {
-	console.log(">>", frame);
+	var xbeeNode = { 
+        nodeName,
+        xbeeRemote64,
+        xbeeRemote16,
+        position: { x, y },
+        lightIntensity,
+        sensorModules: []
+    };
+    
+    var sensorModule = {
+        moduleName,
+        macAddress,
+        height,
+        temperature,
+        humidity,
+        pressure,
+        carbonDioxide
+    }
+    
+    // Parse xbee frame
+    var length = 0;
+    xbeeNode.xbeeRemote16 = frame.remote16;
+    xbeeNode.xbeeRemote64 = frame.remote64;
+    while(frame.data[length++] != 0);
+    xbeeNode.nodeName = frame.data.toString('ascii', 0, length - 1);
+    xbeeNode.position.x = frame.data[length++];
+    xbeeNode.position.y = frame.data[length++];
+    
+    switch(frame.data[length++]) {
+        case 0x00: // Light 
+            xbeeNode.lightIntensity = (frame.data[length++] << 24) |
+                (frame.data[length++] << 16) | (frame.data[length++] << 8)
+                | frame.data[length++];
+            break;
+        case 0x02:
+            sensorModule.carbonDioxide = ((frame.data[length++] << 8) 
+                | frame.data[length++]) / 10;
+        // Intentianal fallthrough here, dont put a break;
+        case 0x01: // Temperature, Humidity, pressure
+            var start = length;
+            // Copy sensor module name
+            while(frame.data[length++] != 0);
+            sensorModule.nodeName = frame.data.toString('ascii', start, length - 1);
+            // Copy MAC Address
+            sensorModule.macAddress = frame.data.toString('hex', length, length + 6);
+            length++;
+            // Get module height
+            sensorModule.height = frame.data[length++];
+            sensorModule.temperature = ((frame.data[length++] << 8) 
+                | frame.data[length++]) / 10;
+            sensorModule.humidity = frame.data[length++];
+            sensorModule.pressure = ((frame.data[length++] << 8) 
+                | frame.data[length++]) / 10;
+            break;
+        default: 
+            // Unknown Data packet
+            console.error('Unknown data packet recieved!');
+            break;
+    }
 });
