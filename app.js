@@ -24,6 +24,10 @@ var serialPort = new serial_port(config.xbeeSettings.serialPort, {
 //////////////////////////////////////////////////////////////////////////////////
 // Section: Express Routes
 //////////////////////////////////////////////////////////////////////////////////
+
+// Serve drc-dashboard application from dist directory
+app.use(express.static('./drc-dashboard/dist'));
+
 app.get('/raw-data', function(req, res) {
     res.send(samplesArray);
 })
@@ -122,8 +126,7 @@ app.get('/raw-data', function(req, res) {
         chartData: chartData
     };
     res.send(overviewData);
-})
-
+});
 
 //////////////////////////////////////////////////////////////////////////////////
 // Section: Serial port and xbee callbacks

@@ -1,0 +1,3 @@
+[submodule "drc-dashboard"]
+	path = drc-dashboard
+	url = https://github.com/AaronRedepenning/drc-dashboard.git
