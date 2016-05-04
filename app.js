@@ -2,6 +2,8 @@ var serial_port = require('serialport').SerialPort;
 var xbee_api    = require('xbee-api');
 var config      = require('./config.js');
 
+var samplesArray = [ ];
+
 var C = xbee_api.constants;
 var xbeeApi = new xbee_api.XBeeAPI({
     api_mode: 1
@@ -21,6 +23,7 @@ serialPort.on('open', function () {
 // All frames parsed by the XBee will be emitted here
 xbeeApi.on("frame_object", function(frame) {
 	var xbeeNode = { 
+        sampleID,
         nodeName,
         xbeeRemote64,
         xbeeRemote16,
@@ -40,11 +43,13 @@ xbeeApi.on("frame_object", function(frame) {
     }
     
     // Parse xbee frame
-    var length = 0;
+    var length = 0, start;
     xbeeNode.xbeeRemote16 = frame.remote16;
     xbeeNode.xbeeRemote64 = frame.remote64;
+    xbeeNode.sampleID = frame.data[length++];
+    start = length;
     while(frame.data[length++] != 0);
-    xbeeNode.nodeName = frame.data.toString('ascii', 0, length - 1);
+    xbeeNode.nodeName = frame.data.toString('ascii', start, length - 1);
     xbeeNode.position.x = frame.data[length++];
     xbeeNode.position.y = frame.data[length++];
     
@@ -59,7 +64,7 @@ xbeeApi.on("frame_object", function(frame) {
                 | frame.data[length++]) / 10;
         // Intentianal fallthrough here, dont put a break;
         case 0x01: // Temperature, Humidity, pressure
-            var start = length;
+            start = length;
             // Copy sensor module name
             while(frame.data[length++] != 0);
             sensorModule.nodeName = frame.data.toString('ascii', start, length - 1);
@@ -73,10 +78,13 @@ xbeeApi.on("frame_object", function(frame) {
             sensorModule.humidity = frame.data[length++];
             sensorModule.pressure = ((frame.data[length++] << 8) 
                 | frame.data[length++]) / 10;
+            xbeeNode.sensorModules.push(sensorModule);
             break;
         default: 
             // Unknown Data packet
             console.error('Unknown data packet recieved!');
             break;
     }
+    
+    console.log(xbeeNode);
 });
