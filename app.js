@@ -111,8 +111,8 @@ app.get('/raw-data', function(req, res) {
     
     // Get data for gauges
     var gauges = { 
-        tempHumGauge: 5, // How to calculate these?
-        lightGauge: 10
+        tempHumGauge: Math.round(Math.random() * 10), // How to calculate these?
+        lightGauge:  Math.round(Math.random() * 10)
     };
     
     // Get current conditions
@@ -122,55 +122,60 @@ app.get('/raw-data', function(req, res) {
     current.humidity = humSeries[0][humSeries[0].length - 1];
     // Dewpoint approximation equation from Mark G. Lawrence (American Meteorological society)
     // Link : https://iridl.ldeo.columbia.edu/dochelp/QA/Basic/dewpoint.html
-    current.dewpoint = current.temperature - ((100 - current.humidity) / 5);
-    current.lightIntensity = data[samplesArray.length - 1];
+    current.dewpoint = Math.round(current.temperature - ((100 - current.humidity) / 5));
+    current.lightIntensity = data[samplesArray.length - 1].lightIntensity;
     
     // Today's extremes
     var extremes = { 
-        maximums: {
-            temperature: 0,
-            humidity: 0,
-            pressure: 0,
-            lightIntensity: 0
+        temperature: {
+            min: 1000,
+            max: 0,
+            average: 0
         },
-        averages: {
-            temperature: 0,
-            humidity: 0,
-            pressure: 0,
-            lightIntensity: 0
+        humidity: {
+            min: 1000,
+            max: 0,
+            average: 0
         },
-        minimums: {
-            temperature: 1000,
-            humidity: 1000,
-            pressure: 100000,
-            lightIntensity: 1000
+        pressure: {
+            min: 10000,
+            max: 0,
+            average: 0
+        },
+        lightIntensity: {
+            min: 10000,
+            max: 0,
+            average: 0
         }
     };
     var numElements;
     for(numElements = 0; numElements < tempSeries[0].length; numElements++) {
-        // Keep sum of all values to compute averages
-        extremes.averages.temperature += tempSeries[0][i];
-        extremes.averages.humidity += humSeries[0][i];
-        extremes.averages.pressure += presSeries[0][i];
-        //extremes.averages.lightIntensity += data[i].lightIntensity;
+        // Calculate temperature min, max, and average
+        extremes.temperature.min = Math.min(extremes.temperature.min, tempSeries[0][numElements]);
+        extremes.temperature.max = Math.min(extremes.temperature.max, tempSeries[0][numElements]);
+        extremes.temperature.average += tempSeries[0][numElements];
         
-        // Compute current maximums
-        extremes.maximums.temperature = Math.max(extremes.averages.temperature, tempSeries[0][i]);
-        extremes.maximums.humidity = Math.max(extremes.averages.humidity, humSeries[0][i]);
-        extremes.maximums.pressure = Math.max(extremes.averages.pressure, presSeries[0][i]);
-        //extremes.maximums.lightIntensity = Math.max(extremes.averages.lightIntensity, lightSeries[0][i]);
+        // Calculate humidity min, max, and average
+        extremes.humidity.min = Math.min(extremes.humidity.min, humSeries[0][numElements]);
+        extremes.humidity.max = Math.min(extremes.humidity.max, humSeries[0][numElements]);
+        extremes.humidity.average += humSeries[0][numElements];
         
-        // Compute current minimums
-        extremes.minimums.temperature = Math.min(extremes.minimums.temperature, tempSeries[0][i]);
-        extremes.minimums.humidity = Math.min(extremes.minimums.humidity, humSeries[0][i]);
-        extremes.minimums.pressure = Math.min(extremes.minimums.pressure, presSeries[0][i]);
-        //extremes.minimums.lightIntensity = Math.min(extremes.minimums.lightIntensity, lightSeries[0][i]);
+        // Calculate pressure min, max, and average
+        extremes.pressure.min = Math.min(extremes.pressure.min, presSeries[0][numElements]);
+        extremes.pressure.max = Math.min(extremes.pressure.max, presSeries[0][numElements]);
+        extremes.pressure.average += presSeries[0][numElements];
+        
+        // Calculate light intensity min, max, and average
+        extremes.lightIntensity.min = Math.min(extremes.lightIntensity.min, samplesArray[numElements].lightIntensity);
+        extremes.lightIntensity.max = Math.min(extremes.lightIntensity.max, samplesArray[numElements].lightIntensity);
+        extremes.lightIntensity.average += samplesArray[numElements].lightIntensity;
+        
     }
     // Compute current averages
-    extremes.averages.temperature /= numElements;
-    extremes.averages.humidity /= numElements;
-    extremes.averages.pressure /= numElements;
-    //extremes.averages.lightIntensity /= numElements;
+    extremes.temperature.average /= numElements;
+    extremes.humidity.average /= numElements;
+    extremes.pressure.average /= numElements;
+    extremes.lightIntensity.average /= numElements;
     
     var overviewData = {
         currentConditions: current,
