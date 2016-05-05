@@ -35,20 +35,25 @@ app.get('/raw-data', function(req, res) {
 // Get fluxmap data
 .get('/fluxmap-data', function (req, res) {
     
+    var height = 275;
+    var width = 550;
+    
     // Build fluxmap json object
     var fluxmapLayers = [ ];
-    var height = 5, width = 10, layers = 5;
+    var yGrid = 5, xGrid = 10, layers = 5;
+    var yOffset = (height / yGrid) / 2;
+    var xOffset = (width / xGrid) / 2;
     
     for(var z = 0; z < layers; z++) {
         var points= [ ];
         
-        for(var y = 0; y < height; y++) {
-            for(var x = 0; x < width; x++) {
+        for(var y = 0; y < height; y += height / yGrid) {
+            for(var x = 0; x < width; x += width / xGrid) {
                 var value = 60 + 40 * (Math.random() - 0.5);
                 
                 var point = {
-                    x: x,
-                    y: y,
+                    x: x + xOffset,
+                    y: y + yOffset,
                     val: value
                 };
                 points.push(point);
