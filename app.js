@@ -32,7 +32,9 @@ app.get('/raw-data', function(req, res) {
     res.send(samplesArray);
 })
 
+// Get fluxmap data
 .get('/fluxmap-data', function (req, res) {
+    
     // Build fluxmap json object
     var fluxmapLayers = [ ];
     var height = 5, width = 10, layers = 5;
@@ -77,7 +79,7 @@ app.get('/raw-data', function(req, res) {
     var tempSeries = [[]];
     var humSeries = [[]];
     var presSeries = [[]];
-    var co2Series = [[]];
+    var lightSeries = [[]];
     
     for(var i = 0; i < data.length; i++) {
         var averageT = 0, averageH = 0, averageP = 0, total = 0;
@@ -94,6 +96,7 @@ app.get('/raw-data', function(req, res) {
         tempSeries[0].push(averageT);
         humSeries[0].push(averageH);
         presSeries[0].push(averageP);
+        lightSeries[0].push(samplesArray[i].lightIntensity);
     }
     
     var chartData = {
@@ -101,14 +104,15 @@ app.get('/raw-data', function(req, res) {
         series: [
             {name: "Temperature", data: tempSeries},
             {name: "Humidity", data: humSeries},
-            {name: "Pressure", data: presSeries}
+            {name: "Pressure", data: presSeries},
+            {name: "Light Intensity", data: lightSeries}
         ]
     };
     
     // Get data for gauges
     var gauges = { 
-        tempHumGauge: 5,
-        ventGauge: 10
+        tempHumGauge: 5, // How to calculate these?
+        lightGauge: 10
     };
     
     // Get current conditions
@@ -119,12 +123,62 @@ app.get('/raw-data', function(req, res) {
     // Dewpoint approximation equation from Mark G. Lawrence (American Meteorological society)
     // Link : https://iridl.ldeo.columbia.edu/dochelp/QA/Basic/dewpoint.html
     current.dewpoint = current.temperature - ((100 - current.humidity) / 5);
+    current.lightIntensity = data[samplesArray.length - 1];
+    
+    // Today's extremes
+    var extremes = { 
+        maximums: {
+            temperature: 0,
+            humidity: 0,
+            pressure: 0,
+            lightIntensity: 0
+        },
+        averages: {
+            temperature: 0,
+            humidity: 0,
+            pressure: 0,
+            lightIntensity: 0
+        },
+        minimums: {
+            temperature: 1000,
+            humidity: 1000,
+            pressure: 100000,
+            lightIntensity: 1000
+        }
+    };
+    var numElements;
+    for(numElements = 0; numElements < tempSeries[0].length; numElements++) {
+        // Keep sum of all values to compute averages
+        extremes.averages.temperature += tempSeries[0][i];
+        extremes.averages.humidity += humSeries[0][i];
+        extremes.averages.pressure += presSeries[0][i];
+        extremes.averages.lightIntensity += data[i].lightIntensity;
+        
+        // Compute current maximums
+        extremes.maximums.temperature = Math.max(extremes.averages.temperature, tempSeries[0][i]);
+        extremes.maximums.humidity = Math.max(extremes.averages.humidity, humSeries[0][i]);
+        extremes.maximums.pressure = Math.max(extremes.averages.pressure, presSeries[0][i]);
+        extremes.maximums.lightIntensity = Math.max(extremes.averages.lightIntensity, lightSeries[0][i]);
+        
+        // Compute current minimums
+        extremes.minimums.temperature = Math.min(extremes.minimums.temperature, tempSeries[0][i]);
+        extremes.minimums.humidity = Math.min(extremes.minimums.humidity, humSeries[0][i]);
+        extremes.minimums.pressure = Math.min(extremes.minimums.pressure, presSeries[0][i]);
+        extremes.minimums.lightIntensity = Math.min(extremes.minimums.lightIntensity, lightSeries[0][i]);
+    }
+    // Compute current averages
+    extremes.averages.temperature /= numElements;
+    extremes.averages.humidity /= numElements;
+    extremes.averages.pressure /= numElements;
+    extremes.averages.lightIntensity /= numElements;
     
     var overviewData = {
         currentConditions: current,
         gaugeData: gauges,
-        chartData: chartData
+        chartData: chartData,
+        extremes: extremes
     };
+    
     res.send(overviewData);
 });
 
