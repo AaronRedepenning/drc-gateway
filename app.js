@@ -152,25 +152,25 @@ app.get('/raw-data', function(req, res) {
         extremes.averages.temperature += tempSeries[0][i];
         extremes.averages.humidity += humSeries[0][i];
         extremes.averages.pressure += presSeries[0][i];
-        extremes.averages.lightIntensity += data[i].lightIntensity;
+        //extremes.averages.lightIntensity += data[i].lightIntensity;
         
         // Compute current maximums
         extremes.maximums.temperature = Math.max(extremes.averages.temperature, tempSeries[0][i]);
         extremes.maximums.humidity = Math.max(extremes.averages.humidity, humSeries[0][i]);
         extremes.maximums.pressure = Math.max(extremes.averages.pressure, presSeries[0][i]);
-        extremes.maximums.lightIntensity = Math.max(extremes.averages.lightIntensity, lightSeries[0][i]);
+        //extremes.maximums.lightIntensity = Math.max(extremes.averages.lightIntensity, lightSeries[0][i]);
         
         // Compute current minimums
         extremes.minimums.temperature = Math.min(extremes.minimums.temperature, tempSeries[0][i]);
         extremes.minimums.humidity = Math.min(extremes.minimums.humidity, humSeries[0][i]);
         extremes.minimums.pressure = Math.min(extremes.minimums.pressure, presSeries[0][i]);
-        extremes.minimums.lightIntensity = Math.min(extremes.minimums.lightIntensity, lightSeries[0][i]);
+        //extremes.minimums.lightIntensity = Math.min(extremes.minimums.lightIntensity, lightSeries[0][i]);
     }
     // Compute current averages
     extremes.averages.temperature /= numElements;
     extremes.averages.humidity /= numElements;
     extremes.averages.pressure /= numElements;
-    extremes.averages.lightIntensity /= numElements;
+    //extremes.averages.lightIntensity /= numElements;
     
     var overviewData = {
         currentConditions: current,
