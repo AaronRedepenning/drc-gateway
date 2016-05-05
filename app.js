@@ -4,6 +4,7 @@ var fs          = require('fs');
 var config      = require('./config.js');
 var express     = require('express');
 var app         = express();
+var fluxmapSeed = require('./appData/fluxmapSeedData.json');
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Section: Global Variables
@@ -35,38 +36,24 @@ app.get('/raw-data', function(req, res) {
 // Get fluxmap data
 .get('/fluxmap-data', function (req, res) {
     
-    var height = 275;
-    var width = 550;
-    
     // Build fluxmap json object
-    var fluxmapLayers = [ ];
-    var yGrid = 5, xGrid = 10, layers = 5;
-    var yOffset = (height / yGrid) / 2;
-    var xOffset = (width / xGrid) / 2;
+    var fluxmapLayers = [ ], numLayers = 5;
     
-    for(var z = 0; z < layers; z++) {
-        var points= [ ];
+    for(var z = 0; z < numLayers; z++) {
+        var layer = require('./appData/fluxmapSeedData' + z + '.json');
         
-        for(var y = 0; y < height; y += height / yGrid) {
-            for(var x = 0; x < width; x += width / xGrid) {
-                var value = 60 + 40 * (Math.random() - 0.5);
-                
-                var point = {
-                    x: x + xOffset,
-                    y: y + yOffset,
-                    val: value
-                };
-                points.push(point);
-            }
+        for(var len = 0; len < layer.data.length; len++) {
+            var change = (Math.random() * 15) - 7.5; // Allow change of +/- 7.5 degrees maximum
+            layer.data[len].val += change;
+            layer.min = Math.min(layer.min, layer.data[len].val);
+            layer.max = Math.max(layer.max, layer.data[len].val);
         }
         
-        var layer = {
-            z: z,
-            data: points,
-            min: 0,
-            max: 100
-        }
         fluxmapLayers.push(layer);
+        
+        // Store data to file for next time 
+        fs.writeFile('./fluxmapSeedData' + z + '.json', '//Auto-generated file for fluxmap data, Layer #' + z + '\n' 
+            + JSON.stringify(layer, null, 4));
     }
     
     res.send(fluxmapLayers);
