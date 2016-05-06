@@ -41,7 +41,8 @@ app.get('/raw-data', function(req, res) {
     
     for(var z = 0; z < numLayers; z++) {
         var layer = require('./appData/fluxmapSeedData' + z + '.json');
-        
+        layer.min = 65;
+        layer.max = 80;
         for(var len = 0; len < layer.data.length; len++) {
             var change = (Math.random() * 15) - 7.5; // Allow change of +/- 7.5 degrees maximum
             layer.data[len].val += change;
@@ -131,19 +132,19 @@ app.get('/raw-data', function(req, res) {
     else if((current.temperature < 76) || current.humidity < 35) {
         gauges.tempHumGauge = 4;
     }
-    else if((current.temperature < 76) && current.humidity < 50) {
+    else if((current.temperature < 79) && current.humidity < 50) {
         gauges.tempHumGauge = 5;
     }
-    else if((current.temperature < 77) && current.humidity < 60) {
+    else if((current.temperature < 82) && current.humidity < 60) {
         gauges.tempHumGauge = 6;
     }
-    else if((current.temperature < 77) || current.humidity < 60) {
+    else if((current.temperature < 82) || current.humidity < 60) {
         gauges.tempHumGauge = 7;
     }
-    else if((current.temperature < 81) || current.humidity < 60) {
+    else if((current.temperature < 85) || current.humidity < 60) {
         gauges.tempHumGauge = 8;
     }
-    else if((current.temperature < 85) || current.humidity < 70) {
+    else if((current.temperature < 90) || current.humidity < 70) {
         gauges.tempHumGauge = 9;
     }
     else {
