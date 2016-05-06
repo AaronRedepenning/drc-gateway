@@ -104,13 +104,13 @@ app.get('/raw-data', function(req, res) {
     
     // Get current conditions
     var current = { };
-    current.temperature = Math.round(tempSeries[0][tempSeries[0].length - 1]);
-    current.pressure = Math.round(presSeries[0][presSeries[0].length - 1]);
-    current.humidity = Math.round(humSeries[0][humSeries[0].length - 1]);
+    current.temperature = Math.round(tempSeries[0][tempSeries[0].length - 1] * 10) / 10;
+    current.pressure = Math.round(presSeries[0][presSeries[0].length - 1]* 10) / 10;
+    current.humidity = Math.round(humSeries[0][humSeries[0].length - 1] * 10) / 10;
     // Dewpoint approximation equation from Mark G. Lawrence (American Meteorological society)
     // Link : https://iridl.ldeo.columbia.edu/dochelp/QA/Basic/dewpoint.html
-    current.dewpoint = Math.round(current.temperature - ((100 - current.humidity) / 5));
-    current.lightIntensity = Math.round(data[samplesArray.length - 1].lightIntensity);
+    current.dewpoint = Math.round((current.temperature - ((100 - current.humidity) / 5)) * 10) /10;
+    current.lightIntensity = Math.round(data[samplesArray.length - 1].lightIntensity * 10) / 10;
     
     // Get data for gauges
     var gauges = { 
