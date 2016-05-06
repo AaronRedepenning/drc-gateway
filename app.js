@@ -4,7 +4,6 @@ var fs          = require('fs');
 var config      = require('./config.js');
 var express     = require('express');
 var app         = express();
-var fluxmapSeed = require('./appData/fluxmapSeedData.json');
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Section: Global Variables
