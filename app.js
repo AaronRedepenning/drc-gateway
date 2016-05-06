@@ -11,6 +11,7 @@ var fluxmapSeed = require('./appData/fluxmapSeedData.json');
 ///////////////////////////////////////////////////////////////////////////////////
 var dataFileName = './sensorData.json';
 var samplesArray = [ ];
+var samplesArrayLength = 360;
 
 var C = xbee_api.constants;
 var xbeeApi = new xbee_api.XBeeAPI({
@@ -101,21 +102,94 @@ app.get('/raw-data', function(req, res) {
         ]
     };
     
-    // Get data for gauges
-    var gauges = { 
-        tempHumGauge: Math.round(Math.random() * 10), // How to calculate these?
-        lightGauge:  Math.round(Math.random() * 10)
-    };
-    
     // Get current conditions
     var current = { };
-    current.temperature = tempSeries[0][tempSeries[0].length - 1];
-    current.pressure = presSeries[0][presSeries[0].length - 1];
-    current.humidity = humSeries[0][humSeries[0].length - 1];
+    current.temperature = Math.round(tempSeries[0][tempSeries[0].length - 1]);
+    current.pressure = Math.round(presSeries[0][presSeries[0].length - 1]);
+    current.humidity = Math.round(humSeries[0][humSeries[0].length - 1]);
     // Dewpoint approximation equation from Mark G. Lawrence (American Meteorological society)
     // Link : https://iridl.ldeo.columbia.edu/dochelp/QA/Basic/dewpoint.html
     current.dewpoint = Math.round(current.temperature - ((100 - current.humidity) / 5));
-    current.lightIntensity = data[samplesArray.length - 1].lightIntensity;
+    current.lightIntensity = Math.round(data[samplesArray.length - 1].lightIntensity);
+    
+    // Get data for gauges
+    var gauges = { 
+        tempHumGauge,
+        lightGauge
+    };
+    // Temperature comfort based off of Gnerre and Fuller chart
+    if((current.temperature < 65) && (current.humidity < 10)) {
+        gauges.tempHumGauge = 0;
+    }
+    else if((current.temperature < 65) || (current.humidity < 10)) {
+        gauges.tempHumGauge = 1;
+    }
+    else if((current.temperature < 68) && current.humidity < 25) {
+        gauges.tempHumGauge = 2;
+    }
+    else if((current.temperature < 68) || current.humidity < 25) {
+        gauges.tempHumGauge = 3;
+    }
+    else if((current.temperature < 76) || current.humidity < 35) {
+        gauges.tempHumGauge = 4;
+    }
+    else if((current.temperature < 76) && current.humidity < 50) {
+        gauges.tempHumGauge = 5;
+    }
+    else if((current.temperature < 77) && current.humidity < 60) {
+        gauges.tempHumGauge = 6;
+    }
+    else if((current.temperature < 77) || current.humidity < 60) {
+        gauges.tempHumGauge = 7;
+    }
+    else if((current.temperature < 81) || current.humidity < 60) {
+        gauges.tempHumGauge = 8;
+    }
+    else if((current.temperature < 85) || current.humidity < 70) {
+        gauges.tempHumGauge = 9;
+    }
+    else {
+        gauges.tempHumGauge = 10;
+    }
+    
+    // Light intensity comfort calculation
+    if(current.lightIntensity < 20) {
+        gauges.lightGauge = 0;
+    }
+    else if(current.lightIntensity < 50) {
+        gauges.lightGauge = 1;
+    }
+    else if(current.lightIntensity < 100) {
+        gauges.lightGauge = 2;
+    }
+    else if(current.lightIntensity < 150) {
+        gauges.lightGauge = 3;
+    }
+    else if(current.lightIntensity < 250) {
+        gauges.lightGauge = 3;
+    }
+    else if(current.lightIntensity < 500) {
+        gauges.lightGauge = 4;
+    }
+    else if(current.lightIntensity < 1000) {
+        gauges.lightGauge = 5;
+    }
+    else if(current.lightIntensity < 1500) {
+        gauges.lightGauge = 6;
+    }
+    else if(current.lightIntensity < 5000) {
+        gauges.lightGauge = 7;
+    }
+    else if(current.lightIntensity < 10000) {
+        gauges.lightGauge = 8;
+    }
+    else if(current.lightIntensity < 20000) {
+        gauges.lightGauge = 9;
+    }
+    else {
+        gauges.lightGauge = 10;
+    }
+    
     
     // Today's extremes
     var extremes = { 
@@ -177,7 +251,26 @@ app.get('/raw-data', function(req, res) {
     };
     
     res.send(overviewData);
-});
+})
+
+.get('/sensor-node/:id', function (req, res) {
+    // Build data response for single sensor node
+    var data = samplesArray;
+    var moduleNumber = 0;
+    
+    // Chart data
+    var labelsData = data.map(function (element, index, arr) {
+        return element.timestamp;
+    });
+    
+    
+    var sensorNodeData = {
+        chartData: [],
+        currentConditions: {}
+    };
+    
+    res.send(sensorNodeData);
+})
 
 //////////////////////////////////////////////////////////////////////////////////
 // Section: Serial port and xbee callbacks
@@ -228,7 +321,7 @@ xbeeApi.on("frame_object", function(frame) {
                 return false;
             });
             if(index < 0) {
-                if(samplesArray.length > 30) {
+                if(samplesArray.length > samplesArrayLength) {
                     samplesArray.shift();
                 }
                 samplesArray.push(xbeeNode);
@@ -269,7 +362,7 @@ xbeeApi.on("frame_object", function(frame) {
             });
             if(index < 0) {
                 samplesArray.push(xbeeNode);
-                if(samplesArray.length > 30) {
+                if(samplesArray.length > samplesArrayLength) {
                     samplesArray.shift();
                 }
             }
