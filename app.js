@@ -52,8 +52,7 @@ app.get('/raw-data', function(req, res) {
         fluxmapLayers.push(layer);
         
         // Store data to file for next time 
-        fs.writeFile('./fluxmapSeedData' + z + '.json', '//Auto-generated file for fluxmap data, Layer #' + z + '\n' 
-            + JSON.stringify(layer, null, 4));
+        fs.writeFile('./fluxmapSeedData' + z + '.json', JSON.stringify(layer, null, 4));
     }
     
     res.send(fluxmapLayers);
@@ -113,8 +112,8 @@ app.get('/raw-data', function(req, res) {
     
     // Get data for gauges
     var gauges = { 
-        tempHumGauge,
-        lightGauge
+        tempHumGauge: 0,
+        lightGauge: 0
     };
     // Temperature comfort based off of Gnerre and Fuller chart
     if((current.temperature < 65) && (current.humidity < 10)) {
