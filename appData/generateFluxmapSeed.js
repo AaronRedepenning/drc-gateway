@@ -30,7 +30,7 @@ function WriteFluxmapJSON() {
             max: 100
         };
 
-        fs.writeFile('./fluxmapSeedData' + z + '.json', '//Auto-generated file for fluxmap data, Layer #' + z + '\n' + JSON.stringify(data, null, 4), function () {
+        fs.writeFile('./fluxmapSeedData' + z + '.json', JSON.stringify(data, null, 4), function () {
             console.log("File written successfuly!");
         });
     }
