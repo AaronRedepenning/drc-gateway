@@ -10,7 +10,20 @@ var app         = express();
 ///////////////////////////////////////////////////////////////////////////////////
 var dataFileName = './sensorData.json';
 var samplesArray = [ ];
-var samplesArrayLength = 360;
+var samplesArrayLength = 180;
+
+// Gnerre and Fuller Comfort Index
+var comfortTable = [[3, 5, 6, 6, 6, 5, 5, 5, 4, 3],
+                    [3, 5, 6, 6, 6, 6, 6, 5, 4, 3],
+                    [3, 6, 8, 6, 7, 7, 7, 7, 4, 2],
+                    [3, 6, 9, 10, 9, 8, 8, 7, 2, 1],
+                    [3, 6, 9, 10, 9, 9, 8, 7, 2, 1],
+                    [3, 6, 9, 10, 9, 9, 8, 7, 2, 1],
+                    [3, 6, 9, 10, 9, 8, 8, 7, 2, 1],
+                    [2, 5, 5, 5, 4, 4, 4, 3, 2, 1],
+                    [2, 3, 4, 4, 4, 2, 2, 2, 2, 1],
+                    [1, 2, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]; 
 
 var C = xbee_api.constants;
 var xbeeApi = new xbee_api.XBeeAPI({
@@ -53,7 +66,7 @@ app.get('/raw-data', function(req, res) {
         fluxmapLayers.push(layer);
         
         // Store data to file for next time 
-        fs.writeFile('./fluxmapSeedData' + z + '.json', JSON.stringify(layer, null, 4));
+        fs.writeFile('./appData/fluxmapSeedData' + z + '.json', JSON.stringify(layer, null, 4));
     }
     
     res.send(fluxmapLayers);
@@ -94,10 +107,10 @@ app.get('/raw-data', function(req, res) {
     var chartData = {
         labels: labelsData,
         series: [
-            {name: "Temperature", data: tempSeries},
-            {name: "Humidity", data: humSeries},
-            {name: "Pressure", data: presSeries},
-            {name: "Light Intensity", data: lightSeries}
+            {name: "Temperature (F)", data: tempSeries},
+            {name: "Humidity (%RH)", data: humSeries},
+            {name: "Pressure (hPa)", data: presSeries},
+            {name: "Light Intensity (lux)", data: lightSeries}
         ]
     };
     
@@ -116,80 +129,80 @@ app.get('/raw-data', function(req, res) {
         tempHumGauge: 0,
         lightGauge: 0
     };
-    // Temperature comfort based off of Gnerre and Fuller chart
-    if((current.temperature < 65) && (current.humidity < 10)) {
-        gauges.tempHumGauge = 0;
+
+    var getTempIndex = function(temp) {
+        if(temp < 65) {
+           return 0;
+        }
+        else if(temp < 70) {
+           return 1;
+        }
+        else if(temp < 74) {
+           return 2;
+        }
+        else if(temp < 76) {
+           return 3;
+        }
+        else if(temp < 78) {
+           return 4;
+        }
+        else if(temp < 80) {
+           return 5;
+        }
+        else if(temp < 82) {
+           return 6;
+        }
+        else if(temp < 84) {
+           return 7;
+        }
+        else if(temp < 87) {
+           return 8;
+        }
+        else {
+           return 9;
+        }
     }
-    else if((current.temperature < 65) || (current.humidity < 10)) {
-        gauges.tempHumGauge = 1;
-    }
-    else if((current.temperature < 68) && current.humidity < 25) {
-        gauges.tempHumGauge = 2;
-    }
-    else if((current.temperature < 68) || current.humidity < 25) {
-        gauges.tempHumGauge = 3;
-    }
-    else if((current.temperature < 76) || current.humidity < 35) {
-        gauges.tempHumGauge = 4;
-    }
-    else if((current.temperature < 79) && current.humidity < 50) {
-        gauges.tempHumGauge = 5;
-    }
-    else if((current.temperature < 82) && current.humidity < 60) {
-        gauges.tempHumGauge = 6;
-    }
-    else if((current.temperature < 82) || current.humidity < 60) {
-        gauges.tempHumGauge = 7;
-    }
-    else if((current.temperature < 85) || current.humidity < 60) {
-        gauges.tempHumGauge = 8;
-    }
-    else if((current.temperature < 90) || current.humidity < 70) {
-        gauges.tempHumGauge = 9;
-    }
-    else {
-        gauges.tempHumGauge = 10;
-    }
-    
+
+    gauges.tempHumGauge = comfortTable[getTempIndex(current.temperature)][Math.round(current.humidity / 10)];
+     
     // Light intensity comfort calculation
     if(current.lightIntensity < 20) {
         gauges.lightGauge = 0;
     }
     else if(current.lightIntensity < 50) {
-        gauges.lightGauge = 1;
+        gauges.lightGauge = 4;
     }
     else if(current.lightIntensity < 100) {
         gauges.lightGauge = 2;
     }
     else if(current.lightIntensity < 150) {
-        gauges.lightGauge = 3;
+        gauges.lightGauge = 6;
     }
     else if(current.lightIntensity < 250) {
-        gauges.lightGauge = 3;
+        gauges.lightGauge = 7;
     }
     else if(current.lightIntensity < 500) {
-        gauges.lightGauge = 4;
+        gauges.lightGauge = 8;
     }
     else if(current.lightIntensity < 1000) {
-        gauges.lightGauge = 5;
+        gauges.lightGauge = 10;
     }
     else if(current.lightIntensity < 1500) {
-        gauges.lightGauge = 6;
+        gauges.lightGauge = 9;
     }
     else if(current.lightIntensity < 5000) {
         gauges.lightGauge = 7;
     }
     else if(current.lightIntensity < 10000) {
-        gauges.lightGauge = 8;
+        gauges.lightGauge = 5;
     }
     else if(current.lightIntensity < 20000) {
-        gauges.lightGauge = 9;
+        gauges.lightGauge = 3;
     }
     else {
-        gauges.lightGauge = 10;
+        gauges.lightGauge = 1;
     }
-    
-    
+
     // Today's extremes
     var extremes = { 
         temperature: {
@@ -216,23 +229,23 @@ app.get('/raw-data', function(req, res) {
     var numElements;
     for(numElements = 0; numElements < tempSeries[0].length; numElements++) {
         // Calculate temperature min, max, and average
-        extremes.temperature.min = Math.min(extremes.temperature.min, tempSeries[0][numElements]);
-        extremes.temperature.max = Math.max(extremes.temperature.max, tempSeries[0][numElements]);
+        extremes.temperature.min = Math.round(Math.min(extremes.temperature.min, tempSeries[0][numElements]));
+        extremes.temperature.max = Math.round(Math.max(extremes.temperature.max, tempSeries[0][numElements]));
         extremes.temperature.average += tempSeries[0][numElements];
         
         // Calculate humidity min, max, and average
-        extremes.humidity.min = Math.min(extremes.humidity.min, humSeries[0][numElements]);
-        extremes.humidity.max = Math.max(extremes.humidity.max, humSeries[0][numElements]);
+        extremes.humidity.min = Math.round(Math.min(extremes.humidity.min, humSeries[0][numElements]));
+        extremes.humidity.max = Math.round(Math.max(extremes.humidity.max, humSeries[0][numElements]));
         extremes.humidity.average += humSeries[0][numElements];
         
         // Calculate pressure min, max, and average
-        extremes.pressure.min = Math.min(extremes.pressure.min, presSeries[0][numElements]);
-        extremes.pressure.max = Math.max(extremes.pressure.max, presSeries[0][numElements]);
+        extremes.pressure.min = Math.round(Math.min(extremes.pressure.min, presSeries[0][numElements]));
+        extremes.pressure.max = Math.round(Math.max(extremes.pressure.max, presSeries[0][numElements]));
         extremes.pressure.average += presSeries[0][numElements];
         
         // Calculate light intensity min, max, and average
-        extremes.lightIntensity.min = Math.min(extremes.lightIntensity.min, samplesArray[numElements].lightIntensity);
-        extremes.lightIntensity.max = Math.max(extremes.lightIntensity.max, samplesArray[numElements].lightIntensity);
+        extremes.lightIntensity.min = Math.round(Math.min(extremes.lightIntensity.min, samplesArray[numElements].lightIntensity));
+        extremes.lightIntensity.max = Math.round(Math.max(extremes.lightIntensity.max, samplesArray[numElements].lightIntensity));
         extremes.lightIntensity.average += samplesArray[numElements].lightIntensity;
         
     }
